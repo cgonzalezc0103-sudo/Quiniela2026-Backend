@@ -1,5 +1,4 @@
-﻿// Controllers/AuthController.cs - Actualizado
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Quiniela.Models;
 using Quiniela.Services;
 using Quiniela.Data;
@@ -50,13 +49,14 @@ namespace Quiniela.Controllers
                         usuario.Nombres,
                         usuario.Email,
                         usuario.Rol,
-                        usuario.Empresa
+                        usuario.Empresa,
+                        usuario.IdEquipo
                     }
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = ex });
+                return StatusCode(500, new { message = ex.Message });
             }
         }
 
@@ -70,15 +70,46 @@ namespace Quiniela.Controllers
                     return BadRequest(new { message = "Datos de registro son requeridos" });
                 }
 
+                // Validaciones básicas en el backend también
+                if (string.IsNullOrEmpty(request.Cedula))
+                {
+                    return BadRequest(new { message = "La cédula es requerida" });
+                }
+
                 var idUsuario = await _databaseService.ExecuteStoredProcedureSingle<int>(
                     "quiniela.SP_RegistrarUsuario",
-                    request);
+                    new
+                    {
+                        UserName = request.UserName,
+                        Nombres = request.Nombres,
+                        Email = request.Email,
+                        Password = request.Password,
+                        Cedula = request.Cedula,
+                        CodigoPromocional = request.CodigoPromocional,
+                        IdEquipo = request.IdEquipo
+                    });
 
-                return Ok(new { message = "Usuario registrado exitosamente. Pendiente de activación por administrador.", idUsuario });
+                return Ok(new
+                {
+                    message = "Usuario registrado exitosamente. Pendiente de activación por administrador.",
+                    idUsuario
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = ex });
+                // Capturar mensajes de error específicos del SP
+                var errorMessage = ex.Message;
+
+                if (errorMessage.Contains("La cédula ya está registrada"))
+                    return BadRequest(new { message = "La cédula ya está registrada" });
+
+                if (errorMessage.Contains("El email ya está registrado"))
+                    return BadRequest(new { message = "El email ya está registrado" });
+
+                if (errorMessage.Contains("Código promocional"))
+                    return BadRequest(new { message = errorMessage });
+
+                return StatusCode(500, new { message = "Error interno del servidor" });
             }
         }
     }

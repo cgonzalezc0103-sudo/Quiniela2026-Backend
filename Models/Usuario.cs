@@ -9,5 +9,6 @@
         public bool IndActivo { get; set; }
         public string? Rol { get; set; }
         public string? Empresa { get; set; }
+        public int IdEquipo { get; set; }
     }
 }
