@@ -50,14 +50,19 @@ namespace Quiniela.Controllers
         {
             try
             {
-                var affected = await _databaseService.ExecuteStoredProcedure(
+                // Usar ExecuteStoredProcedureSingle para obtener el usuario actualizado
+                var usuario = await _databaseService.ExecuteStoredProcedureSingle<UsuarioAdmin>(
                     "quiniela.SP_CambiarEstadoUsuario",
                     new { IdUsuario = idUsuario, Activo = request.Activo });
 
-                if (affected > 0)
+                if (usuario != null)
                 {
                     var action = request.Activo ? "activado" : "desactivado";
-                    return Ok(new { message = $"Usuario {action} exitosamente" });
+                    return Ok(new
+                    {
+                        message = $"Usuario {action} exitosamente",
+                        usuario = usuario
+                    });
                 }
                 else
                     return NotFound(new { message = "Usuario no encontrado" });
@@ -73,18 +78,40 @@ namespace Quiniela.Controllers
         {
             try
             {
-                var affected = await _databaseService.ExecuteStoredProcedure(
+                // Usar ExecuteStoredProcedureSingle para obtener el usuario actualizado
+                var usuario = await _databaseService.ExecuteStoredProcedureSingle<UsuarioAdmin>(
                     "quiniela.SP_ActivarUsuario",
                     new { IdUsuario = idUsuario });
 
-                if (affected > 0)
-                    return Ok(new { message = "Usuario activado exitosamente" });
+                if (usuario != null)
+                    return Ok(new
+                    {
+                        message = "Usuario activado exitosamente",
+                        usuario = usuario
+                    });
                 else
                     return NotFound(new { message = "Usuario no encontrado" });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error al activar usuario" });
+            }
+        }
+
+        [HttpGet("buscar")]
+        public async Task<IActionResult> BuscarUsuarios([FromQuery] string termino, [FromQuery] bool soloPendientes = false)
+        {
+            try
+            {
+                var usuarios = await _databaseService.ExecuteStoredProcedure<UsuarioAdmin>(
+                    "quiniela.SP_BuscarUsuarios",
+                    new { TerminoBusqueda = termino, MostrarSoloPendientes = soloPendientes }
+                );
+                return Ok(usuarios);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al buscar usuarios" });
             }
         }
     }

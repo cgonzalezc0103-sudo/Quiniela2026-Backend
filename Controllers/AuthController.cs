@@ -76,7 +76,12 @@ namespace Quiniela.Controllers
                     return BadRequest(new { message = "La cédula es requerida" });
                 }
 
-                var idUsuario = await _databaseService.ExecuteStoredProcedureSingle<int>(
+                if (string.IsNullOrEmpty(request.UserName))
+                {
+                    return BadRequest(new { message = "El nombre de usuario es requerido" });
+                }
+
+                var result = await _databaseService.ExecuteStoredProcedureSingle<dynamic>(
                     "quiniela.SP_RegistrarUsuario",
                     new
                     {
@@ -89,16 +94,42 @@ namespace Quiniela.Controllers
                         IdEquipo = request.IdEquipo
                     });
 
+                // Verificar que result no sea null
+                if (result == null)
+                {
+                    return StatusCode(500, new { message = "Error al procesar el registro" });
+                }
+
+                // Convertir a dynamic y acceder a las propiedades
+                dynamic dynamicResult = result;
+
+                // Verificar que las propiedades existan
+                if (dynamicResult.IdUsuario == null || dynamicResult.IndActivo == null)
+                {
+                    return StatusCode(500, new { message = "Respuesta inválida del servidor" });
+                }
+
+                var idUsuario = (int)dynamicResult.IdUsuario;
+                var indActivo = (bool)dynamicResult.IndActivo;
+
+                var message = indActivo
+                    ? "¡Registro exitoso! Tu cuenta ha sido activada automáticamente con el código promocional."
+                    : "Usuario registrado exitosamente. Pendiente de activación por administrador.";
+
                 return Ok(new
                 {
-                    message = "Usuario registrado exitosamente. Pendiente de activación por administrador.",
-                    idUsuario
+                    message = message,
+                    idUsuario,
+                    indActivo
                 });
             }
             catch (Exception ex)
             {
                 // Capturar mensajes de error específicos del SP
                 var errorMessage = ex.Message;
+
+                if (errorMessage.Contains("El nombre de usuario ya está registrado"))
+                    return BadRequest(new { message = "El nombre de usuario ya está registrado" });
 
                 if (errorMessage.Contains("La cédula ya está registrada"))
                     return BadRequest(new { message = "La cédula ya está registrada" });
