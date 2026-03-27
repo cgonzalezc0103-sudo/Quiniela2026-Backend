@@ -6,5 +6,6 @@
         public string? Nombres { get; set; }
         public string? Empresa { get; set; }
         public int PuntosTotales { get; set; }
+        public string? Alias { get; set; }
     }
 }
