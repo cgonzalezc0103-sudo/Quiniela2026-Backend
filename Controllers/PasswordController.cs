@@ -40,7 +40,7 @@ namespace Quiniela.Controllers
                 }
 
                 var parameters = new DynamicParameters();
-                parameters.Add("@Email", request.Email);
+                parameters.Add("@EmailOrUserName", request.Email);
                 parameters.Add("@Cedula", request.Cedula);
                 parameters.Add("@PasswordAnterior", request.PasswordAnterior);
                 parameters.Add("@PasswordNueva", request.PasswordNueva);
@@ -86,7 +86,7 @@ namespace Quiniela.Controllers
                 }
 
                 var parameters = new DynamicParameters();
-                parameters.Add("@Email", request.Email);
+                parameters.Add("@EmailOrUserName", request.Email);
                 parameters.Add("@Cedula", request.Cedula);
                 parameters.Add("@Mensaje", dbType: DbType.String, direction: ParameterDirection.Output, size: 500);
                 parameters.Add("@Exito", dbType: DbType.Boolean, direction: ParameterDirection.Output);

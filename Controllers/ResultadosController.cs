@@ -43,30 +43,78 @@ namespace Quiniela.Controllers
             }
         }
 
-        [HttpPut("{idJuego}")]
-        [Authorize(Roles = "Administrador Site")]
-        public async Task<IActionResult> ActualizarResultado(int idJuego, [FromBody] PronosticoRequest request)
+        [HttpGet("{idJuego}/puntos")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPuntosPorJuego(int idJuego)
         {
             try
             {
-                var affected = await _databaseService.ExecuteStoredProcedure(
-                    "quiniela.SP_ActualizarResultado",
-                    new
-                    {
-                        IdJuego = idJuego,
-                        Resultado1 = request.Resultado1,
-                        Resultado2 = request.Resultado2
-                    });
+                var puntos = await _databaseService.ExecuteStoredProcedure<PuntoJuego>(
+                    "quiniela.SP_ObtenerPuntosPorJuego",
+                    new { IdJuego = idJuego }
+                );
 
-                if (affected > 0)
-                    return Ok(new { message = "Resultado actualizado exitosamente" });
-                else
-                    return NotFound(new { message = "Juego no encontrado" });
+                return Ok(puntos);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = ex });
+                return StatusCode(500, new { message = ex.Message });
             }
+        }
+
+        [HttpPut("{idJuego}")]
+        [Authorize(Roles = "Administrador Site")]
+        public async Task<IActionResult> EditarResultado(int idJuego, [FromBody] EditarResultadoRequest request)
+        {
+            try
+            {
+                if (request == null)
+                    return BadRequest(new { message = "Datos requeridos" });
+
+                if (request.Resultado1 < 0 || request.Resultado2 < 0)
+                    return BadRequest(new { message = "Los resultados no pueden ser negativos" });
+
+                var juego = await _databaseService.ExecuteStoredProcedureSingle<JuegoResultado>(
+                    "quiniela.SP_EditarResultadoJuego",
+                    new { IdJuego = idJuego, Resultado1 = request.Resultado1, Resultado2 = request.Resultado2 });
+
+                if (juego == null)
+                    return NotFound(new { message = "Juego no encontrado" });
+
+                return Ok(new { message = "Resultado actualizado y puntos recalculados exitosamente", juego });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        // Clases auxiliares (pueden estar dentro del mismo archivo)
+        public class EditarResultadoRequest
+        {
+            public int Resultado1 { get; set; }
+            public int Resultado2 { get; set; }
+        }
+
+        public class JuegoResultado
+        {
+            public int IdJuego { get; set; }
+            public int Resultado1 { get; set; }
+            public int Resultado2 { get; set; }
+            public bool IndFinalizado { get; set; }
+        }
+
+        public class PuntoJuego
+        {
+            public int IdUsuario { get; set; }
+            public string UserName { get; set; } = string.Empty;
+            public string Nombres { get; set; } = string.Empty;
+            public int PuntosObtenidos { get; set; }
+            public string TipoAcierto { get; set; } = string.Empty;
+            public int Pronostico1 { get; set; }
+            public int Pronostico2 { get; set; }
+            public int Resultado1 { get; set; }
+            public int Resultado2 { get; set; }
         }
     }
 }

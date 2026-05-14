@@ -23,14 +23,14 @@ namespace Quiniela.Controllers
         {
             try
             {
-                if (request?.Email == null || request.Password == null)
+                if (string.IsNullOrEmpty(request?.Email) || string.IsNullOrEmpty(request.Password))
                 {
-                    return BadRequest(new { message = "Email y contraseña son requeridos" });
+                    return BadRequest(new { message = "Email/Usuario y contraseña son requeridos" });
                 }
 
                 var usuario = await _databaseService.ExecuteStoredProcedureSingle<Usuario>(
                     "quiniela.SP_LoginUsuario",
-                    new { request.Email, request.Password });
+                    new { EmailOrUserName = request.Email, Password = request.Password });
 
                 if (usuario == null)
                     return Unauthorized(new { message = "Credenciales inválidas" });
@@ -50,7 +50,8 @@ namespace Quiniela.Controllers
                         usuario.Email,
                         usuario.Rol,
                         usuario.Empresa,
-                        usuario.IdEquipo
+                        usuario.IdEquipo,
+                        usuario.UserName
                     }
                 });
             }
@@ -70,7 +71,7 @@ namespace Quiniela.Controllers
                     return BadRequest(new { message = "Datos de registro son requeridos" });
                 }
 
-                // Validaciones básicas en el backend también
+                // Validar que todos los campos estén presentes
                 if (string.IsNullOrEmpty(request.Cedula))
                 {
                     return BadRequest(new { message = "La cédula es requerida" });
@@ -79,6 +80,31 @@ namespace Quiniela.Controllers
                 if (string.IsNullOrEmpty(request.UserName))
                 {
                     return BadRequest(new { message = "El nombre de usuario es requerido" });
+                }
+
+                if (string.IsNullOrEmpty(request.Nombres))
+                {
+                    return BadRequest(new { message = "El nombre completo es requerido" });
+                }
+
+                if (string.IsNullOrEmpty(request.Email))
+                {
+                    return BadRequest(new { message = "El email es requerido" });
+                }
+
+                if (string.IsNullOrEmpty(request.Password))
+                {
+                    return BadRequest(new { message = "La contraseña es requerida" });
+                }
+
+                if (string.IsNullOrEmpty(request.CodigoPromocional))
+                {
+                    return BadRequest(new { message = "El código promocional es obligatorio" });
+                }
+
+                if (!request.IdEquipo.HasValue || request.IdEquipo.Value <= 0)
+                {
+                    return BadRequest(new { message = "Debe seleccionar un equipo favorito" });
                 }
 
                 var result = await _databaseService.ExecuteStoredProcedureSingle<dynamic>(
@@ -91,30 +117,19 @@ namespace Quiniela.Controllers
                         Password = request.Password,
                         Cedula = request.Cedula,
                         CodigoPromocional = request.CodigoPromocional,
-                        IdEquipo = request.IdEquipo
+                        IdEquipo = request.IdEquipo.Value
                     });
 
-                // Verificar que result no sea null
                 if (result == null)
                 {
                     return StatusCode(500, new { message = "Error al procesar el registro" });
                 }
 
-                // Convertir a dynamic y acceder a las propiedades
                 dynamic dynamicResult = result;
-
-                // Verificar que las propiedades existan
-                if (dynamicResult.IdUsuario == null || dynamicResult.IndActivo == null)
-                {
-                    return StatusCode(500, new { message = "Respuesta inválida del servidor" });
-                }
-
                 var idUsuario = (int)dynamicResult.IdUsuario;
                 var indActivo = (bool)dynamicResult.IndActivo;
 
-                var message = indActivo
-                    ? "¡Registro exitoso! Tu cuenta ha sido activada automáticamente con el código promocional."
-                    : "Usuario registrado exitosamente. Pendiente de activación por administrador.";
+                var message = "¡Registro exitoso! Tu cuenta ha sido activada automáticamente.";
 
                 return Ok(new
                 {
@@ -125,7 +140,6 @@ namespace Quiniela.Controllers
             }
             catch (Exception ex)
             {
-                // Capturar mensajes de error específicos del SP
                 var errorMessage = ex.Message;
 
                 if (errorMessage.Contains("El nombre de usuario ya está registrado"))
@@ -139,6 +153,9 @@ namespace Quiniela.Controllers
 
                 if (errorMessage.Contains("Código promocional"))
                     return BadRequest(new { message = errorMessage });
+
+                if (errorMessage.Contains("equipo") || errorMessage.Contains("Equipo"))
+                    return BadRequest(new { message = "El equipo seleccionado no es válido" });
 
                 return StatusCode(500, new { message = "Error interno del servidor" });
             }
