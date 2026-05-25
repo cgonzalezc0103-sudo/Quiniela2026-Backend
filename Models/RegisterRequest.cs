@@ -9,7 +9,7 @@
         public string Cedula { get; set; } = string.Empty; // NUEVO: Cédula (requerido)
         public string? CodigoPromocional { get; set; } // NUEVO: Código promocional (opcional)
         public int? IdEquipo { get; set; } // Equipo favorito (opcional)
-        public string Factura { get; set; } = string.Empty;
+        public string? Factura { get; set; }
     }
 
 }
