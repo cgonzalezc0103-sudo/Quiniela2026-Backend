@@ -14,5 +14,6 @@
         public int? IdEmpresa { get; set; }
         public int? IdEquipo { get; set; }
         public DateTime? FechaRegistro { get; set; }
+        public string? Factura { get; set; }
     }
 }

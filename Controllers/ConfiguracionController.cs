@@ -46,7 +46,8 @@ namespace Quiniela.Controllers
             var filePath = Path.Combine(uploadPath, fileName);
             using (var stream = new FileStream(filePath, FileMode.Create))
                 await file.CopyToAsync(stream);
-            
+
+            /*var url = $"http://quinielaqa.norkut.com.ve:5001/images/configuracion/{seccion}/{fileName}";*/
             var url = $"https://quiniela.sigo.com.ve:8443/images/configuracion/{seccion}/{fileName}"; 
             /*var url = $"http://localhost:5000/images/configuracion/{seccion}/{fileName}";*/
             return Ok(new { url });

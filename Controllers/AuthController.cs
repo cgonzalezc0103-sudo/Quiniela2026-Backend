@@ -117,7 +117,8 @@ namespace Quiniela.Controllers
                         Password = request.Password,
                         Cedula = request.Cedula,
                         CodigoPromocional = request.CodigoPromocional,
-                        IdEquipo = request.IdEquipo.Value
+                        IdEquipo = request.IdEquipo.Value,
+                        Factura = request.Factura,
                     });
 
                 if (result == null)

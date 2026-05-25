@@ -96,6 +96,7 @@ namespace Quiniela.Controllers
         public int Utilizados { get; set; }
         public DateTime FechaCreacion { get; set; }
         public bool IndActivo { get; set; }
+
     }
 
     public class CodigoDetalle
@@ -106,6 +107,7 @@ namespace Quiniela.Controllers
         public string? CedulaUsuario { get; set; }
         public string? NombreUsuario { get; set; }
         public DateTime? FechaUso { get; set; }
+        public string Factura { get; set; } = string.Empty;
     }
 
     public class CrearRollRequest
